@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bihar Election 2025 — Live Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0A0A0F;
+  --surface: #111118;
+  --surface2: #18181F;
+  --border: rgba(255,255,255,0.07);
+  --nda: #FF4D00;
+  --nda2: #FF8C00;
+  --mgb: #00C853;
+  --mgb2: #00E676;
+  --bjp: #FF6600;
+  --jdu: #00B8D4;
+  --ljp: #FFD600;
+  --rjd: #00E676;
+  --inc: #2979FF;
+  --aimim: #9C27B0;
+  --jansuraaj: #FF1744;
+  --yellow: #FFE100;
+  --pink: #FF2D78;
+  --teal: #00FFD4;
+  --purple: #BF5FFF;
+  --white: #FFFFFF;
+  --muted: rgba(255,255,255,0.4);
+  --glow-nda: 0 0 30px rgba(255,77,0,0.35);
+  --glow-mgb: 0 0 30px rgba(0,200,83,0.3);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated grid background */
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,77,0,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,77,0,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+body::after {
+  content:'';
+  position:fixed;
+  top:-30%;
+  left:-10%;
+  width:60%;
+  height:60%;
+  background: radial-gradient(ellipse, rgba(255,77,0,0.07) 0%, transparent 65%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap { max-width:1440px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+
+/* ---- HEADER ---- */
+header {
+  padding: 36px 0 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.header-top {
+  display: flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:16px;
+}
+.badge-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+.badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform:uppercase;
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-weight:500;
+}
+.badge-live { background:rgba(255,29,68,0.2); color:#FF4D6A; border:1px solid rgba(255,29,68,0.3); }
+.badge-date { background:rgba(255,255,255,0.06); color:var(--muted); border:1px solid var(--border); }
+.badge-seats { background:rgba(255,77,0,0.15); color:#FF8C00; border:1px solid rgba(255,77,0,0.3); }
+
+h1 {
+  font-family:'Bebas Neue', sans-serif;
+  font-size: clamp(42px,7vw,80px);
+  letter-spacing: 0.03em;
+  line-height:0.95;
+  color:white;
+}
+h1 .accent { color: var(--nda); }
+h1 .accent2 { color: var(--yellow); }
+
+.header-stats {
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+}
+.hstat {
+  text-align:right;
+}
+.hstat-val {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;
+  line-height:1;
+  display:block;
+}
+.hstat-label {
+  font-size:11px;
+  color:var(--muted);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.08em;
+}
+
+/* ---- TABS ---- */
+.tabs {
+  display:flex;
+  gap:2px;
+  margin:24px 0;
+  border-bottom:2px solid var(--border);
+  overflow-x:auto;
+  padding-bottom:0;
+}
+.tab {
+  padding:10px 22px;
+  background:transparent;
+  border:none;
+  color:var(--muted);
+  font-family:'Outfit',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  position:relative;
+  white-space:nowrap;
+  transition:color 0.2s;
+  letter-spacing:0.03em;
+  border-bottom:3px solid transparent;
+  margin-bottom:-2px;
+}
+.tab:hover { color:white; }
+.tab.active { color:white; border-bottom-color: var(--nda); }
+
+/* ---- PANELS ---- */
+.panel { display:none; padding-bottom:60px; }
+.panel.active { display:block; }
+
+/* ---- GRID ---- */
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+.g-wide { display:grid; grid-template-columns:1.6fr 1fr; gap:16px; }
+.g-wide2 { display:grid; grid-template-columns:1fr 1.6fr; gap:16px; }
+.mb { margin-bottom:16px; }
+
+@media (max-width:900px) {
+  .g2,.g3,.g4,.g-wide,.g-wide2 { grid-template-columns:1fr; }
+}
+
+/* ---- CARD ---- */
+.card {
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+  transition:border-color 0.2s;
+}
+.card:hover { border-color: rgba(255,77,0,0.25); }
+
+.card-head {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  margin-bottom:6px;
+}
+.card-title {
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:0.01em;
+  color:white;
+}
+.card-sub {
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:18px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.04em;
+}
+.tag {
+  font-size:10px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.1em;
+  padding:2px 8px;
+  border-radius:3px;
+  font-weight:700;
+  text-transform:uppercase;
+}
+.tag-nda { background:rgba(255,77,0,0.2); color:#FF8C00; }
+.tag-mgb { background:rgba(0,200,83,0.15); color:#00E676; }
+.tag-new { background:rgba(255,225,0,0.15); color:#FFE100; }
+
+/* ---- CHART ---- */
+.cw { position:relative; }
+.cw-280 { height:280px; }
+.cw-320 { height:320px; }
+.cw-240 { height:240px; }
+.cw-200 { height:200px; }
+.cw-360 { height:360px; }
+
+/* ---- ALLIANCE HERO ---- */
+.alliance-hero {
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:20px;
+  align-items:center;
+  margin-bottom:16px;
+}
+.alliance-block {
+  border-radius:16px;
+  padding:28px 24px;
+  position:relative;
+  overflow:hidden;
+}
+.alliance-block.nda {
+  background:linear-gradient(135deg,rgba(255,77,0,0.22),rgba(255,140,0,0.08));
+  border:1px solid rgba(255,77,0,0.4);
+  box-shadow: var(--glow-nda);
+}
+.alliance-block.mgb {
+  background:linear-gradient(135deg,rgba(0,200,83,0.18),rgba(0,230,118,0.05));
+  border:1px solid rgba(0,200,83,0.35);
+  box-shadow: var(--glow-mgb);
+}
+.alliance-block.others {
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.1);
+}
+.alliance-name {
+  font-size:12px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.alliance-seats {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:88px;
+  line-height:0.9;
+  letter-spacing:0.02em;
+}
+.alliance-block.nda .alliance-seats { color:var(--nda); }
+.alliance-block.mgb .alliance-seats { color:var(--mgb2); }
+.alliance-block.others .alliance-seats { color:rgba(255,255,255,0.5); }
+.alliance-pct {
+  font-size:13px;
+  color:var(--muted);
+  margin-top:4px;
+  font-family:'JetBrains Mono',monospace;
+}
+.alliance-parties {
+  margin-top:14px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.ap-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-size:12px;
+  padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.ap-name { font-weight:600; }
+.ap-seats { font-family:'JetBrains Mono',monospace; font-weight:700; }
+
+.vs-center {
+  text-align:center;
+  padding:0 8px;
+}
+.vs-text {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:52px;
+  color:rgba(255,255,255,0.12);
+  letter-spacing:0.1em;
+}
+.vs-majority {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  color:var(--yellow);
+  letter-spacing:0.1em;
+  background:rgba(255,225,0,0.1);
+  border:1px solid rgba(255,225,0,0.2);
+  padding:4px 8px;
+  border-radius:4px;
+  margin-top:8px;
+  display:block;
+}
+
+/* ---- STAT CARD ---- */
+.stat-card {
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+}
+.stat-card .accent-line {
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+}
+.stat-card .sc-label {
+  font-size:10px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.12em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.stat-card .sc-val {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:44px;
+  line-height:1;
+}
+.stat-card .sc-sub {
+  font-size:11px;
+  color:var(--muted);
+  margin-top:4px;
+}
+.stat-card .sc-change {
+  font-size:11px;
+  font-family:'JetBrains Mono',monospace;
+  margin-top:6px;
+  font-weight:700;
+}
+.pos { color:#00E676; }
+.neg { color:#FF4D6A; }
+
+/* ---- MAJORITY BAR ---- */
+.maj-bar-wrap { margin:20px 0 8px; }
+.maj-bar-labels {
+  display:flex;
+  justify-content:space-between;
+  font-size:11px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+.maj-bar-bg {
+  height:12px;
+  background:rgba(255,255,255,0.05);
+  border-radius:99px;
+  overflow:hidden;
+  position:relative;
+}
+.maj-bar-nda {
+  position:absolute;
+  left:0; top:0; bottom:0;
+  background:linear-gradient(90deg,#FF4D00,#FF8C00);
+  border-radius:99px;
+  transition:width 1.2s cubic-bezier(0.22,1,0.36,1);
+}
+.maj-bar-mgb {
+  position:absolute;
+  right:0; top:0; bottom:0;
+  background:linear-gradient(90deg,#00C853,#00E676);
+  border-radius:99px;
+  transition:width 1.2s cubic-bezier(0.22,1,0.36,1);
+}
+.maj-marker {
+  position:absolute;
+  top:-4px;
+  left:50.2%;
+  transform:translateX(-50%);
+  width:2px;
+  height:20px;
+  background:var(--yellow);
+  z-index:2;
+}
+.maj-marker-label {
+  position:absolute;
+  top:-18px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:9px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--yellow);
+  white-space:nowrap;
+  letter-spacing:0.1em;
+}
+
+/* ---- INSIGHT CARDS ---- */
+.insight-card {
+  border-radius:12px;
+  padding:20px;
+  border-left:4px solid;
+  position:relative;
+}
+.insight-card.orange { background:rgba(255,77,0,0.08); border-left-color:#FF4D00; }
+.insight-card.green  { background:rgba(0,200,83,0.08); border-left-color:#00C853; }
+.insight-card.yellow { background:rgba(255,225,0,0.08); border-left-color:#FFE100; }
+.insight-card.pink   { background:rgba(255,45,120,0.08); border-left-color:#FF2D78; }
+.insight-card.teal   { background:rgba(0,255,212,0.08); border-left-color:#00FFD4; }
+.insight-card.purple { background:rgba(191,95,255,0.08); border-left-color:#BF5FFF; }
+
+.insight-card .ic-icon { font-size:24px; margin-bottom:8px; }
+.insight-card .ic-title { font-size:14px; font-weight:700; margin-bottom:6px; }
+.insight-card .ic-body { font-size:12px; color:var(--muted); line-height:1.65; }
+.insight-card .ic-stat {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:32px;
+  margin:8px 0 4px;
+}
+
+/* ---- RECOMMENDATION CARDS ---- */
+.rec-card {
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  display:flex;
+  gap:14px;
+  align-items:flex-start;
+}
+.rec-num {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:36px;
+  line-height:1;
+  min-width:44px;
+}
+.rec-content .rc-tag {
+  font-size:9px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  font-weight:700;
+  margin-bottom:6px;
+  display:block;
+}
+.rec-content .rc-title { font-size:13px; font-weight:700; margin-bottom:5px; }
+.rec-content .rc-body { font-size:12px; color:var(--muted); line-height:1.6; }
+.rec-card.r-opp .rec-num { color:#FF4D6A; }
+.rec-card.r-nda .rec-num { color:#FF8C00; }
+.rec-card.r-sys .rec-num { color:#00FFD4; }
+.rec-card.r-str .rec-num { color:#BF5FFF; }
+.rec-card.r-opp .rc-tag { color:#FF4D6A; }
+.rec-card.r-nda .rc-tag { color:#FF8C00; }
+.rec-card.r-sys .rc-tag { color:#00FFD4; }
+.rec-card.r-str .rc-tag { color:#BF5FFF; }
+
+/* ---- PARTY BAR LIST ---- */
+.pbar-list { display:flex; flex-direction:column; gap:10px; }
+.pbar-item {}
+.pbar-header { display:flex; justify-content:space-between; margin-bottom:4px; }
+.pbar-name { font-size:12px; font-weight:600; }
+.pbar-val { font-size:12px; font-family:'JetBrains Mono',monospace; }
+.pbar-bg { height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; }
+.pbar-fill { height:100%; border-radius:99px; }
+
+/* ---- TABLE ---- */
+.tbl-wrap { overflow-x:auto; max-height:350px; overflow-y:auto; }
+.tbl-wrap::-webkit-scrollbar { width:4px; height:4px; }
+.tbl-wrap::-webkit-scrollbar-track { background:transparent; }
+.tbl-wrap::-webkit-scrollbar-thumb { background:rgba(255,77,0,0.3); border-radius:99px; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead th {
+  position:sticky; top:0;
+  background:#111118;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:10px 12px;
+  text-align:left;
+  border-bottom:1px solid var(--border);
+  font-weight:500;
+}
+tbody td { padding:9px 12px; border-bottom:1px solid rgba(255,255,255,0.03); }
+tbody tr:hover td { background:rgba(255,255,255,0.02); }
+.mono { font-family:'JetBrains Mono',monospace; }
+.pill {
+  display:inline-block;
+  padding:2px 7px;
+  border-radius:4px;
+  font-size:10px;
+  font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* SECTION TITLE */
+.section-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;
+  letter-spacing:0.05em;
+  margin:28px 0 14px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.section-title::before {
+  content:'';
+  display:block;
+  width:4px;
+  height:26px;
+  border-radius:2px;
+  background:var(--nda);
+  flex-shrink:0;
+}
+.section-title.green::before { background:var(--mgb); }
+.section-title.yellow::before { background:var(--yellow); }
+.section-title.pink::before { background:var(--pink); }
+.section-title.teal::before { background:var(--teal); }
+
+/* ANIM */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.panel.active .card,
+.panel.active .stat-card,
+.panel.active .alliance-block,
+.panel.active .insight-card,
+.panel.active .rec-card {
+  animation: fadeUp 0.35s ease both;
+}
+
+/* FOOTER */
+footer {
+  text-align:center;
+  padding:24px 0;
+  border-top:1px solid var(--border);
+  font-size:11px;
+  color:rgba(255,255,255,0.15);
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:0.08em;
+}
+
+/* COMPARE BAR */
+.compare-bar {
+  display:flex;
+  height:40px;
+  border-radius:8px;
+  overflow:hidden;
+  margin:20px 0;
+}
+.cb-nda {
+  background:linear-gradient(90deg,#FF4D00,#FF8C00);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;
+  letter-spacing:0.05em;
+  color:white;
+  transition:width 1.2s cubic-bezier(0.22,1,0.36,1);
+}
+.cb-mgb {
+  background:linear-gradient(90deg,#00C853,#00E676);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:18px;
+  letter-spacing:0.05em;
+  color:#003920;
+  transition:width 1.2s cubic-bezier(0.22,1,0.36,1);
+}
+.cb-oth {
+  background:rgba(255,255,255,0.1);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:16px;
+  color:rgba(255,255,255,0.4);
+}
+
+/* VOTE EFFICIENCY VIZ */
+.eff-row {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:14px;
+  padding:14px;
+  border-radius:10px;
+  background:rgba(255,255,255,0.02);
+}
+.eff-party { font-weight:700; font-size:13px; min-width:60px; }
+.eff-bars { flex:1; display:flex; flex-direction:column; gap:5px; }
+.eff-bar-row { display:flex; align-items:center; gap:8px; }
+.eff-bar-label { font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--muted); min-width:48px; }
+.eff-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; }
+.eff-bar-fill { height:100%; border-radius:99px; }
+.eff-ratio { font-family:'JetBrains Mono',monospace; font-size:11px; min-width:52px; text-align:right; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-top">
+      <div>
+        <div class="badge-row">
+          <span class="badge badge-live">● Results Declared</span>
+          <span class="badge badge-date">Nov 14, 2025</span>
+          <span class="badge badge-seats">243 Seats · 2 Phases</span>
+        </div>
+        <h1>BIHAR<br><span class="accent">ELECTION</span> <span class="accent2">2025</span></h1>
+      </div>
+      <div class="header-stats">
+        <div class="hstat">
+          <span class="hstat-val" style="color:#FF4D00">202</span>
+          <span class="hstat-label">NDA Seats Won</span>
+        </div>
+        <div class="hstat">
+          <span class="hstat-val" style="color:#00E676">35</span>
+          <span class="hstat-label">MGB Seats Won</span>
+        </div>
+        <div class="hstat">
+          <span class="hstat-val" style="color:#FFE100">67.1%</span>
+          <span class="hstat-label">Record Turnout</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" onclick="gotoTab('results')">📊 Results</button>
+    <button class="tab" onclick="gotoTab('partywise')">🏛 Party Analysis</button>
+    <button class="tab" onclick="gotoTab('factors')">🔍 Key Factors</button>
+    <button class="tab" onclick="gotoTab('compare')">📈 2020 vs 2025</button>
+    <button class="tab" onclick="gotoTab('insights')">💡 Insights & Recs</button>
+  </div>
+
+  <!-- ══════════ PANEL: RESULTS ══════════ -->
+  <div class="panel active" id="panel-results">
+
+    <!-- Alliance Hero -->
+    <div class="section-title">Alliance Outcome — 2025</div>
+
+    <div class="alliance-hero mb">
+      <div class="alliance-block nda">
+        <div class="alliance-name">🟧 National Democratic Alliance</div>
+        <div class="alliance-seats">202</div>
+        <div class="alliance-pct">of 243 seats · 83.1% of house</div>
+        <div class="alliance-parties">
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FF6600">BJP</span>
+            <span class="ap-seats" style="color:#FF6600">89</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#00B8D4">JD(U)</span>
+            <span class="ap-seats" style="color:#00B8D4">85</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FFD600">LJP(RV)</span>
+            <span class="ap-seats" style="color:#FFD600">19</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FF8C00">HAM(S)</span>
+            <span class="ap-seats" style="color:#FF8C00">5</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FF4D00">RLM</span>
+            <span class="ap-seats" style="color:#FF4D00">4</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vs-center">
+        <div class="vs-text">VS</div>
+        <span class="vs-majority">⚡ MAJORITY: 122</span>
+      </div>
+
+      <div class="alliance-block mgb">
+        <div class="alliance-name">🟩 Mahagathbandhan (INDIA)</div>
+        <div class="alliance-seats">35</div>
+        <div class="alliance-pct">of 243 seats · 14.4% of house</div>
+        <div class="alliance-parties">
+          <div class="ap-row">
+            <span class="ap-name" style="color:#00E676">RJD</span>
+            <span class="ap-seats" style="color:#00E676">25</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#2979FF">INC</span>
+            <span class="ap-seats" style="color:#2979FF">6</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FF4D6A">CPI(ML)L</span>
+            <span class="ap-seats" style="color:#FF4D6A">2</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:#FF4D6A">CPI(M)</span>
+            <span class="ap-seats" style="color:#FF4D6A">1</span>
+          </div>
+          <div class="ap-row">
+            <span class="ap-name" style="color:rgba(255,255,255,0.4)">Others</span>
+            <span class="ap-seats" style="color:rgba(255,255,255,0.4)">1</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual seat bar -->
+    <div class="card mb">
+      <div class="card-head">
+        <div class="card-title">Seat Share Visual</div>
+        <span class="tag tag-nda">NDA LANDSLIDE</span>
+      </div>
+      <div class="card-sub">243 total assembly seats · Majority at 122</div>
+      <div class="compare-bar">
+        <div class="cb-nda" style="width:83.1%">NDA 202</div>
+        <div class="cb-mgb" style="width:14.4%">MGB 35</div>
+        <div class="cb-oth" style="width:2.5%">6</div>
+      </div>
+      <div class="maj-bar-labels">
+        <span style="color:#FF8C00">NDA: 83.1% of House</span>
+        <span style="color:#FFE100">← Majority at 50.2% →</span>
+        <span style="color:#00E676">MGB: 14.4%</span>
+      </div>
+    </div>
+
+    <!-- Stat row -->
+    <div class="g4 mb">
+      <div class="stat-card">
+        <div class="accent-line" style="background:linear-gradient(90deg,#FF4D00,#FF8C00)"></div>
+        <div class="sc-label">NDA Surplus over Majority</div>
+        <div class="sc-val" style="color:#FF4D00">+80</div>
+        <div class="sc-sub">seats beyond 122</div>
+        <div class="sc-change pos">▲ From 3 seats surplus in 2020</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:linear-gradient(90deg,#FFE100,#FF8C00)"></div>
+        <div class="sc-label">Voter Turnout</div>
+        <div class="sc-val" style="color:#FFE100">67.1%</div>
+        <div class="sc-sub">Historic all-time high</div>
+        <div class="sc-change pos">▲ +9.7% vs 2020 (57.4%)</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:linear-gradient(90deg,#FF2D78,#BF5FFF)"></div>
+        <div class="sc-label">Women Turnout</div>
+        <div class="sc-val" style="color:#FF2D78">71.8%</div>
+        <div class="sc-sub">vs men at 62.98%</div>
+        <div class="sc-change pos">▲ Women led by 8.8 pts</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:linear-gradient(90deg,#00FFD4,#2979FF)"></div>
+        <div class="sc-label">Jan Suraaj Seats</div>
+        <div class="sc-val" style="color:#00FFD4">0</div>
+        <div class="sc-sub">Prashant Kishor's party</div>
+        <div class="sc-change neg">Zero seats despite 243 contested</div>
+      </div>
+    </div>
+
+    <div class="g-wide mb">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Party-wise Seat Distribution</div>
+        </div>
+        <div class="card-sub">All parties that won seats · 2025 election</div>
+        <div class="cw cw-320">
+          <canvas id="seatDonut"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">Vote Share vs Seats Won</div>
+          <span class="tag tag-new">EFFICIENCY GAP</span>
+        </div>
+        <div class="card-sub">The RJD paradox — highest votes, fewest seats conversion</div>
+        <div style="margin-top:10px">
+          <div class="eff-row">
+            <div class="eff-party" style="color:#FF6600">BJP</div>
+            <div class="eff-bars">
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Vote %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:87%;background:#FF6600"></div></div>
+                <span class="eff-ratio" style="color:#FF6600">20.1%</span>
+              </div>
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Seat %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:100%;background:rgba(255,102,0,0.5)"></div></div>
+                <span class="eff-ratio" style="color:#FF8C00">36.6%</span>
+              </div>
+            </div>
+          </div>
+          <div class="eff-row">
+            <div class="eff-party" style="color:#00B8D4">JD(U)</div>
+            <div class="eff-bars">
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Vote %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:84%;background:#00B8D4"></div></div>
+                <span class="eff-ratio" style="color:#00B8D4">19.3%</span>
+              </div>
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Seat %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:96%;background:rgba(0,184,212,0.5)"></div></div>
+                <span class="eff-ratio" style="color:#00B8D4">35.0%</span>
+              </div>
+            </div>
+          </div>
+          <div class="eff-row">
+            <div class="eff-party" style="color:#00E676">RJD</div>
+            <div class="eff-bars">
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Vote %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:100%;background:#00E676"></div></div>
+                <span class="eff-ratio" style="color:#00E676">23.0%</span>
+              </div>
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Seat %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:28%;background:rgba(0,230,118,0.4)"></div></div>
+                <span class="eff-ratio" style="color:#FF4D6A">10.3%</span>
+              </div>
+            </div>
+          </div>
+          <div class="eff-row">
+            <div class="eff-party" style="color:#2979FF">INC</div>
+            <div class="eff-bars">
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Vote %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:38%;background:#2979FF"></div></div>
+                <span class="eff-ratio" style="color:#2979FF">8.7%</span>
+              </div>
+              <div class="eff-bar-row">
+                <span class="eff-bar-label">Seat %</span>
+                <div class="eff-bar-bg"><div class="eff-bar-fill" style="width:7%;background:rgba(41,121,255,0.5)"></div></div>
+                <span class="eff-ratio" style="color:#FF4D6A">2.5%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end results -->
+
+  <!-- ══════════ PANEL: PARTY ══════════ -->
+  <div class="panel" id="panel-partywise">
+
+    <div class="section-title">Party Performance Deep Dive</div>
+
+    <div class="g4 mb">
+      <div class="stat-card">
+        <div class="accent-line" style="background:#FF6600"></div>
+        <div class="sc-label">BJP Seats</div>
+        <div class="sc-val" style="color:#FF6600">89</div>
+        <div class="sc-sub">1st time single-largest in Bihar</div>
+        <div class="sc-change pos">▲ +15 from 2020 (74)</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:#00B8D4"></div>
+        <div class="sc-label">JD(U) Seats</div>
+        <div class="sc-val" style="color:#00B8D4">85</div>
+        <div class="sc-sub">Best since 2010 (115)</div>
+        <div class="sc-change pos">▲ +42 from 2020 (43)</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:#00E676"></div>
+        <div class="sc-label">RJD Seats</div>
+        <div class="sc-val" style="color:#00E676">25</div>
+        <div class="sc-sub">Near worst ever (22 in 2010)</div>
+        <div class="sc-change neg">▼ −50 from 2020 (75)</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:#FFD600"></div>
+        <div class="sc-label">LJP(RV) Seats</div>
+        <div class="sc-val" style="color:#FFD600">19</div>
+        <div class="sc-sub">22/28 seats won — 78.6% strike!</div>
+        <div class="sc-change pos">▲ +18 from 2020 (went solo: 1)</div>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="card">
+        <div class="card-title">Vote Share Comparison — 2025</div>
+        <div class="card-sub">All major parties · % of total valid votes</div>
+        <div class="cw cw-320">
+          <canvas id="voteShareChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Strike Rate (Seats Won / Contested)</div>
+        <div class="card-sub">How efficiently did each party convert contests to wins?</div>
+        <div class="cw cw-320">
+          <canvas id="strikeRateChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb">
+      <div class="card-title">Party Seat Change: 2020 → 2025</div>
+      <div class="card-sub">The massive swing — NDA gains vs MGB collapse</div>
+      <div class="cw cw-280">
+        <canvas id="seatChangeChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card mb">
+      <div class="card-title">All-Party Results Table — 2025 Bihar Assembly Election</div>
+      <div class="card-sub">Complete party-wise breakdown with vote share, seats contested and won</div>
+      <div class="tbl-wrap" style="margin-top:12px">
+        <table>
+          <thead>
+            <tr>
+              <th>Party</th>
+              <th>Alliance</th>
+              <th>Seats Contested</th>
+              <th>Seats Won</th>
+              <th>Strike Rate</th>
+              <th>Vote Share %</th>
+              <th>2020 Seats</th>
+              <th>Change</th>
+            </tr>
+          </thead>
+          <tbody id="partyTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end partywise -->
+
+  <!-- ══════════ PANEL: KEY FACTORS ══════════ -->
+  <div class="panel" id="panel-factors">
+
+    <div class="section-title yellow">Women — The Decisive Force</div>
+
+    <div class="g3 mb">
+      <div class="insight-card pink">
+        <div class="ic-icon">👩</div>
+        <div class="ic-title">Historic Women's Turnout</div>
+        <div class="ic-stat" style="color:#FF2D78">71.8%</div>
+        <div class="ic-body">Women's turnout shattered all records — <strong style="color:white">8.8 percentage points</strong> ahead of men (62.98%). Over 2.51 crore women voted, outnumbering men by 4.3 lakh. First time in Bihar's history women's participation exceeded men's by such a margin.</div>
+      </div>
+      <div class="insight-card orange">
+        <div class="ic-icon">💰</div>
+        <div class="ic-title">₹10,000 Cash Transfer — Mukhyamantri Mahila Rozgar Yojana</div>
+        <div class="ic-stat" style="color:#FF8C00">1.41 Cr</div>
+        <div class="ic-body">The NDA transferred <strong style="color:white">₹7,500 crore</strong> to 1.41 crore women just 6 weeks before polling. Analysts call this the single biggest mobilisation tool. In districts with higher female turnout, JD(U) vote share hit 23.8% vs 15.7% elsewhere.</div>
+      </div>
+      <div class="insight-card teal">
+        <div class="ic-icon">🚫🍺</div>
+        <div class="ic-title">Liquor Ban Loyalty</div>
+        <div class="ic-stat" style="color:#00FFD4">~20Yr</div>
+        <div class="ic-body">Nitish Kumar's decade-old alcohol ban built lasting goodwill among rural women. Women who experienced improved household safety voted overwhelmingly NDA. Older women vividly remember the "jungle raj" era under RJD and contrasted it with current stability.</div>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="card">
+        <div class="card-title">Women Turnout Trend — Bihar Elections</div>
+        <div class="card-sub">Female vs male participation (%) across major elections</div>
+        <div class="cw cw-280">
+          <canvas id="womenTurnoutChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Women's Welfare Programs Timeline</div>
+        <div class="card-sub">Key Nitish Kumar policies that built the "Mahila Vote Bank"</div>
+        <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
+          <div class="insight-card teal" style="padding:12px 14px">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="color:#00FFD4;font-family:'Bebas Neue';font-size:22px;line-height:1;min-width:44px">2006</span>
+              <div><div style="font-size:12px;font-weight:700;margin-bottom:3px">Free Cycles for Girl Students</div><div style="font-size:11px;color:var(--muted)">Mukhyamantri Balika Bicycle Yojana — boosted girls' school attendance dramatically</div></div>
+            </div>
+          </div>
+          <div class="insight-card teal" style="padding:12px 14px">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="color:#00FFD4;font-family:'Bebas Neue';font-size:22px;line-height:1;min-width:44px">2016</span>
+              <div><div style="font-size:12px;font-weight:700;margin-bottom:3px">Total Liquor Prohibition</div><div style="font-size:11px;color:var(--muted)">Statewide alcohol ban — massive support among rural women fighting domestic violence</div></div>
+            </div>
+          </div>
+          <div class="insight-card teal" style="padding:12px 14px">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="color:#00FFD4;font-family:'Bebas Neue';font-size:22px;line-height:1;min-width:44px">2022</span>
+              <div><div style="font-size:12px;font-weight:700;margin-bottom:3px">50% Panchayat Reservation + 35% Govt Job Quota</div><div style="font-size:11px;color:var(--muted)">Structural empowerment building long-term women's political identity with the NDA</div></div>
+            </div>
+          </div>
+          <div class="insight-card pink" style="padding:12px 14px">
+            <div style="display:flex;gap:10px;align-items:flex-start">
+              <span style="color:#FF2D78;font-family:'Bebas Neue';font-size:22px;line-height:1;min-width:44px">2025</span>
+              <div><div style="font-size:12px;font-weight:700;margin-bottom:3px">₹10,000 Direct Transfer — Mukhyamantri Mahila Rozgar Yojana</div><div style="font-size:11px;color:var(--muted)">Pre-election cash transfer to 1.41 crore women — converted welfare loyalty into decisive ballot box advantage</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title green">Other Key Factors</div>
+
+    <div class="g3 mb">
+      <div class="insight-card green">
+        <div class="ic-icon">🤝</div>
+        <div class="ic-title">NDA "Coalition of Extremes"</div>
+        <div class="ic-stat" style="color:#00E676">46-47%</div>
+        <div class="ic-body">BJP + JD(U) combined represent what economist Shaibal Gupta called a "coalition of extremes" — bridging upper-caste Hindu voters (BJP) with extremely backward classes and Mahadalits (JD(U)). This caste arithmetic with no vote-split was lethal for MGB.</div>
+      </div>
+      <div class="insight-card purple">
+        <div class="ic-icon">🗳️</div>
+        <div class="ic-title">Vote Distribution vs Concentration</div>
+        <div class="ic-stat" style="color:#BF5FFF">23% → 10%</div>
+        <div class="ic-body">RJD got <strong style="color:white">23% of votes</strong> but only 10.3% of seats. Their support was concentrated in Yadav + Muslim pockets. NDA spread support efficiently across all 243 constituencies — the "where" mattered more than "how many."</div>
+      </div>
+      <div class="insight-card yellow">
+        <div class="ic-icon">📋</div>
+        <div class="ic-title">Voter Roll Revision (SIR)</div>
+        <div class="ic-stat" style="color:#FFE100">60L+</div>
+        <div class="ic-body">The EC's Special Intensive Revision deleted 60+ lakh "dead or migrated" names. Opposition alleged partisan manipulation. Instead of reducing turnout as feared, it may have motivated voters — turnout surged to a record 67.13%, suggesting the controversy backfired on MGB.</div>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="insight-card orange">
+        <div class="ic-icon">👨‍💼</div>
+        <div class="ic-title">The "Brand Nitish" Factor</div>
+        <div class="ic-body" style="font-size:13px">Nitish Kumar's 20+ year governance record proved impenetrable. Despite JD(U) switching alliances twice (2022: left BJP, 2024: returned), voters still trusted the CM. His welfare credibility — real, touchable schemes — beat Tejashwi's abstract promises of "10 lakh jobs in 20 months." The only CM to win 10 terms in Bihar history, Nitish's 'phoenix' comeback narrative resonated with a risk-averse electorate. Even when only 16–18% named him preferred CM in polls, they voted NDA anyway.</div>
+      </div>
+      <div class="insight-card pink">
+        <div class="ic-icon">🎯</div>
+        <div class="ic-title">Chirag Paswan's Stunning Strike Rate</div>
+        <div class="ic-body" style="font-size:13px">LJP(Ram Vilas) converted <strong style="color:white">19 of 28 seats</strong> — a remarkable 67.9% win rate. In 2020, fielded alone (spoiler role), they won just 1. Chirag's Paswan/Dalit voter base contributed a 5–6% swing in key constituencies. By coming back under NDA umbrella and getting selective seat allocation in winnable seats, LJP multiplied its impact exponentially.</div>
+      </div>
+    </div>
+
+    <div class="card mb">
+      <div class="card-title">Factor Impact Scorecard</div>
+      <div class="card-sub">Estimated influence of each factor on NDA's 2025 victory</div>
+      <div class="cw cw-280">
+        <canvas id="factorRadar"></canvas>
+      </div>
+    </div>
+
+  </div><!-- end factors -->
+
+  <!-- ══════════ PANEL: COMPARE ══════════ -->
+  <div class="panel" id="panel-compare">
+
+    <div class="section-title">2020 vs 2025 — The Swing Decade</div>
+
+    <div class="card mb">
+      <div class="card-title">Seat Tally Comparison — 2020 vs 2025</div>
+      <div class="card-sub">How every major party gained or lost seats</div>
+      <div class="cw cw-320">
+        <canvas id="compareChart"></canvas>
+      </div>
+    </div>
+
+    <div class="g2 mb">
+      <div class="card">
+        <div class="card-title">Vote Share Shift — 2020 vs 2025</div>
+        <div class="card-sub">BJP and JD(U) gained; RJD barely moved; INC slid</div>
+        <div class="cw cw-280">
+          <canvas id="voteShareCompare"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Turnout Growth — Historical Trend</div>
+        <div class="card-sub">2025 hits all-time high at 67.13%</div>
+        <div class="cw cw-280">
+          <canvas id="turnoutTrend"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="g4 mb">
+      <div class="stat-card">
+        <div class="accent-line" style="background:#FF6600"></div>
+        <div class="sc-label">NDA 2020</div>
+        <div class="sc-val" style="color:rgba(255,102,0,0.5)">125</div>
+        <div class="sc-sub">Narrow majority</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:#FF4D00"></div>
+        <div class="sc-label">NDA 2025</div>
+        <div class="sc-val" style="color:#FF4D00">202</div>
+        <div class="sc-sub">+77 seats added</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:rgba(0,230,118,0.5)"></div>
+        <div class="sc-label">MGB 2020</div>
+        <div class="sc-val" style="color:rgba(0,230,118,0.5)">110</div>
+        <div class="sc-sub">Near win in 2020</div>
+      </div>
+      <div class="stat-card">
+        <div class="accent-line" style="background:#00E676"></div>
+        <div class="sc-label">MGB 2025</div>
+        <div class="sc-val" style="color:#FF4D6A">35</div>
+        <div class="sc-sub">−75 seats lost</div>
+      </div>
+    </div>
+
+    <div class="card mb">
+      <div class="card-title">What Changed Between 2020 and 2025</div>
+      <div class="card-sub">Key structural differences that flipped the outcome</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px;">
+        <div style="background:rgba(255,77,0,0.07);border:1px solid rgba(255,77,0,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:#FF8C00;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">2020 — Close Contest</div>
+          <div class="pbar-list">
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">NDA Unity</span><span class="pbar-val" style="color:#FF4D6A">Fractured</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:40%;background:#FF4D6A"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">LJP Role</span><span class="pbar-val" style="color:#FF4D6A">Spoiler (−25 JDU seats)</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:20%;background:#FF4D6A"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">Women Turnout</span><span class="pbar-val">59.7%</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:60%;background:#FF8C00"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">JDU Vote Share</span><span class="pbar-val">15.4%</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:38%;background:#00B8D4"></div></div></div>
+          </div>
+        </div>
+        <div style="background:rgba(0,200,83,0.06);border:1px solid rgba(0,200,83,0.2);border-radius:10px;padding:16px">
+          <div style="font-size:12px;font-family:'JetBrains Mono',monospace;color:#00E676;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px">2025 — NDA Sweep</div>
+          <div class="pbar-list">
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">NDA Unity</span><span class="pbar-val" style="color:#00E676">Seamless 5-party</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:100%;background:#00E676"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">LJP Role</span><span class="pbar-val" style="color:#FFD600">Allied (19 wins)</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:80%;background:#FFD600"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">Women Turnout</span><span class="pbar-val">71.8%</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:85%;background:#FF2D78"></div></div></div>
+            <div class="pbar-item"><div class="pbar-header"><span class="pbar-name">JDU Vote Share</span><span class="pbar-val">19.3%</span></div><div class="pbar-bg"><div class="pbar-fill" style="width:72%;background:#00B8D4"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end compare -->
+
+  <!-- ══════════ PANEL: INSIGHTS & RECS ══════════ -->
+  <div class="panel" id="panel-insights">
+
+    <div class="section-title">Key Insights from the 2025 Bihar Election</div>
+
+    <div class="g3 mb">
+      <div class="insight-card orange">
+        <div class="ic-icon">📍</div>
+        <div class="ic-title">Geography Over Arithmetic</div>
+        <div class="ic-body">RJD won <strong style="color:white">23% votes</strong> but only 10.3% seats — proving Bihar elections are won by how spread your support is, not just how much you have. NDA's geographically distributed coalition outperformed RJD's caste-cluster strategy.</div>
+      </div>
+      <div class="insight-card green">
+        <div class="ic-icon">🛡️</div>
+        <div class="ic-title">Welfare Beats Promises</div>
+        <div class="ic-body">Voters chose <strong style="color:white">schemes they had already received</strong> over Tejashwi's promise of 10 lakh jobs in 20 months. The ₹10,000 in women's bank accounts was tangible — government job promises were not. DBT (Direct Benefit Transfer) is now a decisive electoral tool.</div>
+      </div>
+      <div class="insight-card purple">
+        <div class="ic-icon">🔁</div>
+        <div class="ic-title">Nitish's Switcharoo Cost MGB</div>
+        <div class="ic-body">JD(U) left NDA in 2022, joined MGB, left MGB in 2024. Despite two alliance switches, voters <strong style="color:white">rewarded the CM not the party</strong>. This shows personal brand durability in Bihar far exceeds party ideology — a unique Bihar trait.</div>
+      </div>
+      <div class="insight-card yellow">
+        <div class="ic-icon">📱</div>
+        <div class="ic-title">Digital Campaign ≠ Votes</div>
+        <div class="ic-body">Tejashwi ran a digital-heavy campaign with AI videos and social media memes. Jan Suraaj did 5,000 km padyatra and got massive media coverage. <strong style="color:white">Neither translated into seats.</strong> Bihar's rural electorate still responds to welfare delivery over online narratives.</div>
+      </div>
+      <div class="insight-card pink">
+        <div class="ic-icon">⚡</div>
+        <div class="ic-title">Alliance Discipline = Electoral Gold</div>
+        <div class="ic-body">In 2020, LJP alone cost JD(U) ~25 seats by splitting votes. In 2025, bringing LJP back into the tent added <strong style="color:white">19 wins and plugged vote leakage</strong>. Alliance discipline and seat-sharing accuracy remains the single most predictive factor in Bihar.</div>
+      </div>
+      <div class="insight-card teal">
+        <div class="ic-icon">🧮</div>
+        <div class="ic-title">The "SIR Backfire"</div>
+        <div class="ic-body">Voter roll revision that deleted 60L+ names was predicted to suppress opposition votes. Instead, fear of deletion caused a <strong style="color:white">surge in turnout to 67.1%</strong> — a record. High turnout disproportionately helped NDA via women who turned out in unprecedented numbers.</div>
+      </div>
+    </div>
+
+    <div class="section-title pink">Recommendations — What Could Have Changed the Result?</div>
+    <div style="margin-bottom:8px; font-size:12px; font-family:'JetBrains Mono',monospace; color:var(--muted); letter-spacing:0.08em;">STRATEGIC ANALYSIS · FOR OPPOSITION AND POLICY PRACTITIONERS</div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px">
+      <div class="rec-card r-opp">
+        <div class="rec-num">01</div>
+        <div class="rec-content">
+          <span class="rc-tag">For RJD / Opposition</span>
+          <div class="rc-title">Counter welfare with welfare — not just promises</div>
+          <div class="rc-body">RJD's job promise was abstract and deadline-bound (20 months). Had they launched <em>actual</em> pre-campaign schemes or transfers — even small ones from state-controlled resources — they could have matched the tangibility of NDA's ₹10,000 transfer. The lesson: voters trust <strong style="color:white">what's already in their hand</strong>.</div>
+        </div>
+      </div>
+      <div class="rec-card r-opp">
+        <div class="rec-num">02</div>
+        <div class="rec-content">
+          <span class="rc-tag">For MGB Alliance</span>
+          <div class="rc-title">Resolve internal seat-sharing fractures before the campaign</div>
+          <div class="rc-body">VIP (Mukesh Sahani) won zero seats. CPI failed to win any. INC won only 6 of 61 contested. Mahagathbandhan's seat distribution was suboptimal — too many Congress seats in unwinnable constituencies, VIP competing without realistic chances. Tighter seat allocation focused on winnable seats could have added 15–20 more seats.</div>
+        </div>
+      </div>
+      <div class="rec-card r-opp">
+        <div class="rec-num">03</div>
+        <div class="rec-content">
+          <span class="rc-tag">For MGB / Congress</span>
+          <div class="rc-title">Build a credible women's outreach — not just a counter-scheme</div>
+          <div class="rc-body">MGB's ₹2,500/month allowance pledge came too late and lacked credibility. Had the opposition built women-centric political infrastructure — trained women candidates, SHG engagement, grassroots welfare cells — over years, they might have contested the Mahila vote. Women are now <strong style="color:white">Bihar's largest swing bloc</strong>; ignoring them for years proved fatal.</div>
+        </div>
+      </div>
+      <div class="rec-card r-str">
+        <div class="rec-num">04</div>
+        <div class="rec-content">
+          <span class="rc-tag">Structural — For Jan Suraaj</span>
+          <div class="rc-title">Prashant Kishor should have contested selectively, not all 243</div>
+          <div class="rc-body">Contesting all 243 constituencies spread Jan Suraaj too thin. A focused campaign in 20–30 high-profile urban/semi-urban seats with strong governance messaging could have broken through. Instead, zero wins and 2nd/3rd place finishes made JSP a spoiler — hurting MGB in some seats — without gaining any foothold.</div>
+        </div>
+      </div>
+      <div class="rec-card r-nda">
+        <div class="rec-num">05</div>
+        <div class="rec-content">
+          <span class="rc-tag">For NDA to Sustain</span>
+          <div class="rc-title">202 seats create a successor problem — Nitish won't be CM forever</div>
+          <div class="rc-body">NDA's mega-mandate is personified around Nitish Kumar's "Brand." Without a clear succession plan and institutional welfare delivery (not just person-centric), the coalition faces fragility. BJP becoming single-largest party signals internal power-shift — managing the BJP-JDU tension post-Nitish will be the defining challenge of this term.</div>
+        </div>
+      </div>
+      <div class="rec-card r-sys">
+        <div class="rec-num">06</div>
+        <div class="rec-content">
+          <span class="rc-tag">For Electoral System</span>
+          <div class="rc-title">Bihar's vote-seat gap demands proportional scrutiny</div>
+          <div class="rc-body">RJD won 23% of votes but received only 10.3% of seats; NDA won ~47% combined votes and got 83% of seats. While first-past-the-post produces decisive governments, Bihar's 2025 result highlights extreme disproportionality. Policy practitioners should study whether Bihar's constituency delineation amplifies this effect, particularly in Yadav-dominant pockets.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb">
+      <div class="card-title">What Could Have Flipped — Probability Assessment</div>
+      <div class="card-sub">If MGB had executed these strategies, estimated impact on seat tally</div>
+      <div class="cw cw-280">
+        <canvas id="flipChart"></canvas>
+      </div>
+    </div>
+
+  </div><!-- end insights -->
+
+  <footer>Bihar Assembly Election 2025 · Data: Election Commission of India, Wikipedia, The Tribune, The Statesman, Zee News · Analysis by Dashboard · March 2026</footer>
+</div><!-- end wrap -->
+
+<script>
+// ============================================================
+// DEFAULTS
+// ============================================================
+Chart.defaults.color = 'rgba(255,255,255,0.45)';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+Chart.defaults.font.family = 'Outfit';
+
+const G = { color:'rgba(255,255,255,0.05)', drawBorder:false };
+
+// ============================================================
+// DATA
+// ============================================================
+const PARTIES = [
+  {p:'BJP',    alliance:'NDA', contested:101, won:89, voteShare:20.08, seats2020:74,  color:'#FF6600'},
+  {p:'JD(U)', alliance:'NDA', contested:101, won:85, voteShare:19.25, seats2020:43,  color:'#00B8D4'},
+  {p:'LJP(RV)',alliance:'NDA',contested:28,  won:19, voteShare:5.2,   seats2020:1,   color:'#FFD600'},
+  {p:'HAM(S)',  alliance:'NDA', contested:9,  won:5,  voteShare:2.1,   seats2020:4,   color:'#FF8C00'},
+  {p:'RLM',   alliance:'NDA', contested:4,  won:4,  voteShare:1.4,   seats2020:0,   color:'#FF4D00'},
+  {p:'RJD',   alliance:'MGB', contested:141,won:25, voteShare:23.0,  seats2020:75,  color:'#00E676'},
+  {p:'INC',   alliance:'MGB', contested:61, won:6,  voteShare:8.7,   seats2020:19,  color:'#2979FF'},
+  {p:'CPI(ML)L',alliance:'MGB',contested:20,won:2, voteShare:2.8,   seats2020:12,  color:'#FF4D6A'},
+  {p:'CPI(M)', alliance:'MGB', contested:5,  won:1,  voteShare:0.8,   seats2020:2,   color:'#E53935'},
+  {p:'AIMIM', alliance:'Others',contested:9,won:5, voteShare:2.2,   seats2020:5,   color:'#9C27B0'},
+  {p:'BSP',   alliance:'Others',contested:15,won:1, voteShare:1.3,  seats2020:1,   color:'#607D8B'},
+  {p:'Jan Suraaj',alliance:'Others',contested:243,won:0,voteShare:3.9,seats2020:0, color:'#FF1744'},
+];
+
+// ============================================================
+// TAB LOGIC
+// ============================================================
+function gotoTab(name) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const map = {results:0,partywise:1,factors:2,compare:3,insights:4};
+  document.querySelectorAll('.tab')[map[name]].classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  setTimeout(()=>initCharts(name),60);
+}
+
+const built = new Set();
+function initCharts(tab) {
+  if (built.has(tab)) return;
+  built.add(tab);
+  if (tab==='results')    { buildSeatDonut(); }
+  if (tab==='partywise')  { buildVoteShare(); buildStrikeRate(); buildSeatChange(); buildPartyTable(); }
+  if (tab==='factors')    { buildWomenTurnout(); buildFactorRadar(); }
+  if (tab==='compare')    { buildCompare(); buildVoteShareCompare(); buildTurnoutTrend(); }
+  if (tab==='insights')   { buildFlipChart(); }
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+
+// SEAT DONUT
+function buildSeatDonut() {
+  const p = PARTIES.filter(x=>x.won>0);
+  new Chart(document.getElementById('seatDonut'), {
+    type:'doughnut',
+    data:{
+      labels: p.map(x=>x.p),
+      datasets:[{ data:p.map(x=>x.won), backgroundColor:p.map(x=>x.color),
+                  borderWidth:3, borderColor:'#111118', hoverOffset:8 }]
+    },
+    options:{
+      cutout:'62%',
+      plugins:{
+        legend:{ position:'right', labels:{color:'rgba(255,255,255,0.65)',boxWidth:10,font:{size:11},padding:8} },
+        tooltip:{ backgroundColor:'#18181F', borderColor:'rgba(255,77,0,0.3)', borderWidth:1,
+                  callbacks:{ label:c=>` ${c.label}: ${c.raw} seats (${((c.raw/243)*100).toFixed(1)}%)` } }
+      }
+    }
+  });
+}
+
+// VOTE SHARE
+function buildVoteShare() {
+  const top = PARTIES.filter(x=>x.voteShare>=1).sort((a,b)=>b.voteShare-a.voteShare);
+  new Chart(document.getElementById('voteShareChart'), {
+    type:'bar',
+    data:{
+      labels:top.map(x=>x.p),
+      datasets:[{ label:'Vote Share %', data:top.map(x=>x.voteShare),
+                  backgroundColor:top.map(x=>x.color+'BB'), borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.55)',font:{size:10}}},
+        y:{grid:G,ticks:{color:'rgba(255,255,255,0.4)',font:{size:10},callback:v=>v+'%'},
+           title:{display:true,text:'Vote %',color:'rgba(255,255,255,0.3)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// STRIKE RATE
+function buildStrikeRate() {
+  const top = PARTIES.filter(x=>x.contested>0 && x.p!=='Jan Suraaj');
+  const sr = top.map(x=>((x.won/x.contested)*100).toFixed(1));
+  new Chart(document.getElementById('strikeRateChart'), {
+    type:'bar',
+    data:{
+      labels:top.map(x=>x.p),
+      datasets:[{ label:'Strike Rate %', data:sr,
+                  backgroundColor:top.map(x=>x.color+'CC'), borderRadius:6, borderSkipped:false }]
+    },
+    options:{
+      indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}% (${top[c.dataIndex].won}/${top[c.dataIndex].contested})`}}},
+      scales:{
+        x:{grid:G,max:100,ticks:{color:'rgba(255,255,255,0.4)',font:{size:10},callback:v=>v+'%'}},
+        y:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.6)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// SEAT CHANGE
+function buildSeatChange() {
+  const pp = PARTIES.filter(x=>x.seats2020>0||x.won>0);
+  const changes = pp.map(x=>x.won - x.seats2020);
+  new Chart(document.getElementById('seatChangeChart'), {
+    type:'bar',
+    data:{
+      labels:pp.map(x=>x.p),
+      datasets:[
+        {label:'2020 Seats',data:pp.map(x=>x.seats2020),backgroundColor:'rgba(255,255,255,0.1)',borderRadius:4},
+        {label:'2025 Seats',data:pp.map(x=>x.won),backgroundColor:pp.map(x=>x.color+'CC'),borderRadius:4}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',boxWidth:10,font:{size:11}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.55)',font:{size:10}}},
+        y:{grid:G,ticks:{color:'rgba(255,255,255,0.4)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// PARTY TABLE
+function buildPartyTable() {
+  const tb = document.getElementById('partyTable');
+  const allianceColors = {NDA:'rgba(255,77,0,0.15);color:#FF8C00',MGB:'rgba(0,200,83,0.12);color:#00E676',Others:'rgba(255,255,255,0.05);color:rgba(255,255,255,0.5)'};
+  PARTIES.forEach(p => {
+    const sr = p.contested > 0 ? ((p.won/p.contested)*100).toFixed(0)+'%' : '—';
+    const chg = p.won - p.seats2020;
+    const chgStr = chg > 0 ? `<span class="pos">+${chg}</span>` : chg < 0 ? `<span class="neg">${chg}</span>` : '0';
+    const ac = allianceColors[p.alliance] || allianceColors.Others;
+    tb.innerHTML += `<tr>
+      <td style="font-weight:700;color:${p.color}">${p.p}</td>
+      <td><span class="pill" style="background:${ac.split(';')[0].replace('background:','')};${ac.split(';')[1]}">${p.alliance}</span></td>
+      <td class="mono">${p.contested}</td>
+      <td class="mono" style="font-weight:700;color:${p.color}">${p.won}</td>
+      <td class="mono">${sr}</td>
+      <td class="mono">${p.voteShare}%</td>
+      <td class="mono">${p.seats2020}</td>
+      <td class="mono">${chgStr}</td>
+    </tr>`;
+  });
+}
+
+// WOMEN TURNOUT
+function buildWomenTurnout() {
+  new Chart(document.getElementById('womenTurnoutChart'), {
+    type:'line',
+    data:{
+      labels:['2010','2015','2020','2025'],
+      datasets:[
+        {label:'Women Turnout',data:[61.5,63.6,59.7,71.8],borderColor:'#FF2D78',backgroundColor:'rgba(255,45,120,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#FF2D78',pointRadius:5,borderWidth:3},
+        {label:'Men Turnout',data:[55.2,53.8,54.7,62.98],borderColor:'#2979FF',backgroundColor:'rgba(41,121,255,0.05)',fill:true,tension:0.4,pointBackgroundColor:'#2979FF',pointRadius:5,borderWidth:2}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',boxWidth:10,font:{size:11}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.6)'}},
+        y:{grid:G,min:45,max:80,ticks:{color:'rgba(255,255,255,0.4)',callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+// FACTOR RADAR
+function buildFactorRadar() {
+  new Chart(document.getElementById('factorRadar'), {
+    type:'radar',
+    data:{
+      labels:['Women Welfare','Alliance Unity','Governance Record','Caste Engineering','Turnout Surge','Anti-Incumbency Counter','Modi Factor'],
+      datasets:[{
+        label:'NDA Advantage Score',
+        data:[95,90,82,80,85,70,78],
+        backgroundColor:'rgba(255,77,0,0.18)',
+        borderColor:'#FF4D00',
+        borderWidth:2,
+        pointBackgroundColor:'#FF4D00',
+        pointRadius:4
+      },{
+        label:'MGB Performance Score',
+        data:[25,45,30,50,60,55,30],
+        backgroundColor:'rgba(0,200,83,0.1)',
+        borderColor:'#00C853',
+        borderWidth:2,
+        pointBackgroundColor:'#00C853',
+        pointRadius:4
+      }]
+    },
+    options:{
+      scales:{
+        r:{
+          min:0,max:100,
+          grid:{color:'rgba(255,255,255,0.06)'},
+          angleLines:{color:'rgba(255,255,255,0.06)'},
+          ticks:{display:false},
+          pointLabels:{color:'rgba(255,255,255,0.65)',font:{size:10}}
+        }
+      },
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',boxWidth:10,font:{size:11}}}}
+    }
+  });
+}
+
+// COMPARE CHART
+function buildCompare() {
+  const pp = ['BJP','JD(U)','LJP(RV)','RJD','INC','CPI(ML)L','AIMIM'];
+  const s2020 = [74,43,1,75,19,12,5];
+  const s2025 = [89,85,19,25,6,2,5];
+  const colors2025 = ['#FF6600','#00B8D4','#FFD600','#00E676','#2979FF','#FF4D6A','#9C27B0'];
+  new Chart(document.getElementById('compareChart'), {
+    type:'bar',
+    data:{
+      labels:pp,
+      datasets:[
+        {label:'2020 Seats',data:s2020,backgroundColor:'rgba(255,255,255,0.1)',borderRadius:5},
+        {label:'2025 Seats',data:s2025,backgroundColor:colors2025.map(c=>c+'CC'),borderRadius:5}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',boxWidth:10,font:{size:11}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.6)'}},
+        y:{grid:G,ticks:{color:'rgba(255,255,255,0.4)'}}
+      }
+    }
+  });
+}
+
+// VOTE SHARE COMPARE
+function buildVoteShareCompare() {
+  new Chart(document.getElementById('voteShareCompare'), {
+    type:'bar',
+    data:{
+      labels:['BJP','JD(U)','RJD','INC','CPI(ML)L'],
+      datasets:[
+        {label:'2020 Vote %',data:[19.46,15.39,23.11,9.5,5.2],backgroundColor:'rgba(255,255,255,0.12)',borderRadius:5},
+        {label:'2025 Vote %',data:[20.08,19.25,23.0,8.7,2.8],backgroundColor:['#FF6600AA','#00B8D4AA','#00E676AA','#2979FFAA','#FF4D6AAA'],borderRadius:5}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:'rgba(255,255,255,0.6)',boxWidth:10,font:{size:11}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.6)',font:{size:10}}},
+        y:{grid:G,ticks:{color:'rgba(255,255,255,0.4)',callback:v=>v+'%',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// TURNOUT TREND
+function buildTurnoutTrend() {
+  new Chart(document.getElementById('turnoutTrend'), {
+    type:'line',
+    data:{
+      labels:['2005','2010','2015','2020','2025'],
+      datasets:[{
+        label:'Overall Turnout %',
+        data:[46.0,52.9,57.1,57.4,67.13],
+        borderColor:'#FFE100',
+        backgroundColor:'rgba(255,225,0,0.08)',
+        fill:true, tension:0.4,
+        pointBackgroundColor:'#FFE100',
+        pointRadius:6,
+        borderWidth:3
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.6)'}},
+        y:{grid:G,min:40,max:72,ticks:{color:'rgba(255,255,255,0.4)',callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+// FLIP CHART
+function buildFlipChart() {
+  new Chart(document.getElementById('flipChart'), {
+    type:'bar',
+    data:{
+      labels:['Proper seat-sharing\n(MGB)','Women outreach\ncredibility (MGB)','No vote-split\nbetween allies','Defeating SIR\nnarrative','Targeting Gen-Z\neffectively'],
+      datasets:[{
+        label:'Estimated Additional MGB Seats',
+        data:[18,14,22,5,8],
+        backgroundColor:['rgba(0,200,83,0.7)','rgba(255,45,120,0.7)','rgba(41,121,255,0.7)','rgba(255,225,0,0.7)','rgba(191,95,255,0.7)'],
+        borderRadius:8, borderSkipped:false
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` +${c.raw} estimated seats for MGB`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.55)',font:{size:10},maxRotation:0}},
+        y:{grid:G,ticks:{color:'rgba(255,255,255,0.4)'},
+           title:{display:true,text:'Additional Seats Possible',color:'rgba(255,255,255,0.3)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', () => {
+  initCharts('results');
+});
+</script>
+</body>
+</html>
