@@ -4,6 +4,7 @@ This repository contains a detailed analysis of the Bihar 2025 elections, highli
 An interactive dashboard has been developed to visualize the results, enabling users to explore voter patterns, compare outcomes, and gain data-driven perspectives.
 
 Access the live dashboard here: [Bihar Election Dashboard](https://me-vikash-kumar.github.io/Bihar-Election-Analysis-2025/index.html)
+<img width="1611" height="862" alt="image" src="https://github.com/user-attachments/assets/2a422b59-017d-47e3-94e7-36dc231d1eec" />
 
 ---
 
